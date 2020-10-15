@@ -36,7 +36,8 @@ df_population <-
     "Italy", 60.472650,
     "Spain", 46.752556,
     "Sweden", 10.091340,
-    "UK", 67.841324
+    "UK", 67.841324,
+    "Austria", 9.021247
   )
 
 countries_lst <- df_population$country
@@ -45,9 +46,9 @@ df_confirmed <-
 confirmed_glob %>% 
   rename(province=`Province/State`,country=`Country/Region` ) %>% 
   select(-Lat, -Long) %>%
+  mutate(country=if_else(country=="United Kingdom","UK",country)) %>% 
   filter(country %in% countries_lst) %>% 
   filter(country != "US") %>% # exclude US to be taken from separate report
-  mutate(country=if_else(country=="United Kingdom","UK",country)) %>% 
   filter(is.na(province)) %>% 
   select(-province) %>% 
   tidyr::gather(key="date",value="confirmed",-country) %>% 
@@ -73,9 +74,9 @@ df_deaths <-
 deaths_glob %>% 
   rename(province=`Province/State`,country=`Country/Region` ) %>% 
   select(-Lat, -Long) %>%
+  mutate(country=if_else(country=="United Kingdom","UK",country)) %>%   filter(is.na(province)) %>% 
   filter(country %in% countries_lst) %>% 
   filter(country != "US") %>% # exclude US to be taken from separate report
-  mutate(country=if_else(country=="United Kingdom","UK",country)) %>%   filter(is.na(province)) %>% 
   select(-province) %>% 
   tidyr::gather(key="date",value="deaths",-country) %>% 
   mutate(date=as.Date(date,"%m/%d/%y")) %>% 
@@ -121,14 +122,16 @@ df_confirmed %>%
   geom_line()+
   scale_y_log10()
 
+gg
 ggplotly(gg)
 
 gg <- 
   df_confirmed %>% 
   ggplot(aes(x=date,y=confirmed/population,group=country, color=as.factor(country))) +
-  geom_line()#+
+  geom_line() +
+  scale_x_date(breaks = "1 month")
 # scale_y_log10()
-
+gg
 ggplotly(gg)
 
 gg <- 
@@ -136,7 +139,7 @@ df_deaths %>%
   ggplot(aes(x=date,y=deaths/confirmed,group=country, color=as.factor(country) )) +
   geom_line()+
   geom_hline(yintercept=852/181105)+ # influenza mortality rate
-annotate(geom="text", label="influenza all", x=min(df_deaths$date), y=852/181105, vjust=-0.5,hjust = -0.0, size=3)+
+annotate(geom="text", label="influenza all cases", x=min(df_deaths$date), y=852/181105, vjust=-0.5,hjust = -0.0, size=3)+
   geom_hline(yintercept=852/39686) + # hospitalized mortality rate
   annotate(geom="text", label="influenza hospitalized", x=min(df_deaths$date), y=852/39686, vjust=-0.5,hjust = -0.0, size=3)
 gg
